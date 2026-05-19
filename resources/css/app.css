@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+    --color-primary: #e85d04;
+    --color-primary-dark: #c44d03;
+    --color-primary-light: #fbe8d8;
+    --color-secondary: #023e8a;
+    --color-accent: #f9c74f;
+    --font-sans: 'Figtree', 'Inter', system-ui, sans-serif;
+}
+
+/* Khmer font applied globally — Noto Sans Khmer renders Khmer script, Figtree renders Latin */
+body {
+    font-family: 'Noto Sans Khmer', 'Figtree', 'Inter', system-ui, sans-serif;
+}

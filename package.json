@@ -1,0 +1,36 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build && vite build --ssr",
+        "dev": "vite",
+        "typecheck": "tsc --noEmit",
+        "lint": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@headlessui/react": "^2.0.0",
+        "@inertiajs/react": "^2.0.0",
+        "@tailwindcss/forms": "^0.5.3",
+        "@tailwindcss/vite": "^4.0.0",
+        "@types/node": "^18.13.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@vitejs/plugin-react": "^6.0.1",
+        "axios": "^1.15.0",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^3.0.1",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.0.2",
+        "vite": "^8.0.8"
+    },
+    "dependencies": {
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "lucide-react": "^1.8.0",
+        "qrcode.react": "^4.2.0",
+        "tailwind-merge": "^3.5.0"
+    }
+}
