@@ -12,9 +12,12 @@ use App\Http\Requests\Storefront\CheckoutRequest;
 use App\Models\Cart;
 use App\Models\Payment;
 use App\Models\UserAddress;
+use App\Services\Delivery\ApolloDeliveryProvider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,11 +50,19 @@ final class CheckoutController extends Controller
         CreateOrder $createOrder,
         InitiatePayment $initiatePayment,
     ): Response|RedirectResponse {
+        // Idempotency: prevent double-submit within 60 seconds
+        $lockKey = 'checkout_lock:' . $request->user()->id;
+        if (! Cache::lock($lockKey, 60)->get()) {
+            return back()->withErrors(['cart' => 'Your order is already being processed. Please wait.']);
+        }
+
         $cart = Cart::where('user_id', $request->user()->id)
             ->with('items.variant.product.shop')
             ->firstOrFail();
 
         if ($cart->items->isEmpty()) {
+            Cache::lock($lockKey)->forceRelease();
+
             return back()->withErrors(['cart' => 'Your cart is empty.']);
         }
 
@@ -60,7 +71,28 @@ final class CheckoutController extends Controller
             buyer: $request->user(),
             shippingAddress: $request->validated('shipping_address'),
             note: $request->validated('note'),
+            couponCode: $request->input('coupon_code'),
         );
+
+        // Map shipping province name → Apollo province ID for delivery booking
+        $shippingAddress = $request->validated('shipping_address');
+        $province        = $shippingAddress['province'] ?? '';
+        if ($province !== '') {
+            try {
+                $apollo      = app(ApolloDeliveryProvider::class);
+                $provinceId  = $apollo->findProvinceIdByName($province);
+                if ($provinceId !== null) {
+                    $order->update(['apollo_receiver_province_id' => $provinceId]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Could not map Apollo province for order', [
+                    'order_id' => $order->id,
+                    'province' => $province,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+        }
+
         $paymentData = $initiatePayment($order);
 
         return Inertia::render('storefront/checkout-qr', [

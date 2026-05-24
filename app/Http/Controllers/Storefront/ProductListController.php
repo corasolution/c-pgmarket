@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\SearchQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -59,6 +60,16 @@ final class ProductListController extends Controller
         };
 
         $products = $query->paginate(24)->withQueryString();
+
+        // Track search query for analytics (only first page to avoid duplicates)
+        if ($q !== '' && (int) $request->get('page', 1) === 1) {
+            SearchQuery::create([
+                'query_text'    => mb_substr($q, 0, 255),
+                'user_id'       => $request->user()?->id,
+                'category_slug' => $category !== '' ? $category : null,
+                'results_count' => $products->total(),
+            ]);
+        }
 
         $categories = Category::query()
             ->where('is_active', true)

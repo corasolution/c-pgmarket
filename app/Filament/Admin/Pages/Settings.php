@@ -7,6 +7,7 @@ namespace App\Filament\Admin\Pages;
 use App\Models\SiteSetting;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -46,6 +47,13 @@ final class Settings extends Page
             'MAIL_USERNAME'        => env('MAIL_USERNAME', ''),
             'MAIL_PASSWORD'        => env('MAIL_PASSWORD', ''),
             'MAIL_ENCRYPTION'      => env('MAIL_ENCRYPTION', 'tls'),
+            'TELEGRAM_BOT_TOKEN'              => env('TELEGRAM_BOT_TOKEN', ''),
+            'APOLLO_BASE_URL'                 => env('APOLLO_BASE_URL', 'https://apolo-api.codingate.com'),
+            'APOLLO_DEVICE_OS'               => env('APOLLO_DEVICE_OS', 'Web'),
+            'APOLLO_DEVICE_ID'               => env('APOLLO_DEVICE_ID', 'pgmarket-platform-001'),
+            'APOLLO_EMAIL'                    => env('APOLLO_EMAIL', ''),
+            'APOLLO_PASSWORD'                 => env('APOLLO_PASSWORD', ''),
+            'APOLLO_DEFAULT_SERVICE_TYPE'     => env('APOLLO_DEFAULT_SERVICE_TYPE', 'next_day'),
             'require_email_verification' => SiteSetting::get('require_email_verification', '0') === '1',
             'site_logo'            => SiteSetting::get('site_logo') ? [SiteSetting::get('site_logo')] : [],
             'site_favicon'         => SiteSetting::get('site_favicon') ? [SiteSetting::get('site_favicon')] : [],
@@ -165,6 +173,61 @@ final class Settings extends Page
                             ->placeholder('tls')
                             ->helperText('Usually "tls" for port 587.'),
                     ]),
+
+                Section::make('Telegram Bot')
+                    ->description('Vendors receive instant Telegram notifications when they get new orders. Create a bot via @BotFather on Telegram and paste the token here.')
+                    ->icon(Heroicon::OutlinedChatBubbleLeftRight)
+                    ->schema([
+                        TextInput::make('TELEGRAM_BOT_TOKEN')
+                            ->label('Bot Token')
+                            ->password()
+                            ->revealable()
+                            ->placeholder('123456789:ABCdefGhIjKlMnOpQrStUvWxYz')
+                            ->helperText('Get this from @BotFather on Telegram. Vendors set their Chat ID in Shop Settings.'),
+                    ]),
+
+                Section::make('Apollo eDelivery')
+                    ->description('Configure Apollo eDelivery API for automatic booking creation after successful payment. Credentials are provided by Apollo. Vendors must also set their sender province in Shop Settings.')
+                    ->icon(Heroicon::OutlinedTruck)
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('APOLLO_BASE_URL')
+                            ->label('Base URL')
+                            ->url()
+                            ->placeholder('https://apolo-api.codingate.com')
+                            ->helperText('UAT: https://apolo-api.codingate.com — Production: https://api.apolloelogistics.com')
+                            ->columnSpanFull(),
+
+                        TextInput::make('APOLLO_DEVICE_OS')
+                            ->label('Device OS')
+                            ->placeholder('Web'),
+
+                        TextInput::make('APOLLO_DEVICE_ID')
+                            ->label('Device ID')
+                            ->placeholder('pgmarket-platform-001')
+                            ->helperText('A unique static identifier for this platform.'),
+
+                        TextInput::make('APOLLO_EMAIL')
+                            ->label('Apollo Account Email')
+                            ->email()
+                            ->placeholder('provided by Apollo'),
+
+                        TextInput::make('APOLLO_PASSWORD')
+                            ->label('Apollo Account Password')
+                            ->password()
+                            ->revealable()
+                            ->placeholder('provided by Apollo'),
+
+                        Select::make('APOLLO_DEFAULT_SERVICE_TYPE')
+                            ->label('Default Service Type')
+                            ->options([
+                                'same_day' => 'Same Day',
+                                'next_day' => 'Next Day',
+                                'express'  => 'Express',
+                            ])
+                            ->default('next_day')
+                            ->helperText('Default delivery speed for all bookings.'),
+                    ]),
             ]);
     }
 
@@ -198,6 +261,9 @@ final class Settings extends Page
             'APP_NAME', 'APP_URL',
             'MAIL_FROM_NAME', 'MAIL_FROM_ADDRESS',
             'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_ENCRYPTION',
+            'TELEGRAM_BOT_TOKEN',
+            'APOLLO_BASE_URL', 'APOLLO_DEVICE_OS', 'APOLLO_DEVICE_ID',
+            'APOLLO_EMAIL', 'APOLLO_PASSWORD', 'APOLLO_DEFAULT_SERVICE_TYPE',
         ];
 
         foreach ($envKeys as $key) {

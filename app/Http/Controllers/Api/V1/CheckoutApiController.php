@@ -28,6 +28,8 @@ final class CheckoutApiController extends Controller
             'shipping_address.city' => ['required', 'string', 'max:100'],
             'shipping_address.province' => ['nullable', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:1000'],
+            'payment_method' => ['nullable', 'string', 'in:aba_khqr,cod'],
+            'promo_code' => ['nullable', 'string', 'max:50'],
         ]);
 
         $cart = Cart::where('user_id', $request->user()->id)
@@ -44,6 +46,17 @@ final class CheckoutApiController extends Controller
             shippingAddress: $validated['shipping_address'],
             note: $validated['note'] ?? null,
         );
+
+        $paymentMethod = $validated['payment_method'] ?? 'aba_khqr';
+
+        // COD — no payment needed, mark order directly
+        if ($paymentMethod === 'cod') {
+            return response()->json([
+                'order' => $order->load('subOrders'),
+                'transaction_id' => null,
+                'payment_data' => null,
+            ], 201);
+        }
 
         $paymentData = $initiatePayment($order);
 

@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Notifications\RefundProcessedNotification;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 
@@ -89,6 +90,12 @@ final class ProcessRefund
                 'before' => ['status' => 'paid', 'amount_cents' => $payment->amount_cents],
                 'after' => ['status' => $payment->status, 'refund_cents' => $amountCents],
             ]);
+
+            // Notify buyer about the refund
+            $buyer = $payment->order?->buyer;
+            if ($buyer?->email) {
+                $buyer->notify(new RefundProcessedNotification($payment, $amountCents));
+            }
         });
     }
 }

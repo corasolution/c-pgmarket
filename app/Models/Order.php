@@ -17,13 +17,17 @@ final class Order extends Model
     protected $fillable = [
         'reference', 'buyer_id', 'status', 'total_cents',
         'total_currency', 'shipping_address', 'note', 'cancellation_reason',
+        'coupon_id', 'coupon_code', 'discount_cents',
+        'apollo_receiver_province_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_cents' => 'integer',
-            'shipping_address' => 'array',
+            'total_cents'                  => 'integer',
+            'discount_cents'               => 'integer',
+            'shipping_address'             => 'array',
+            'apollo_receiver_province_id'  => 'integer',
         ];
     }
 

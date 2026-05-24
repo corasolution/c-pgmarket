@@ -15,10 +15,21 @@ final class ProductController extends Controller
     {
         $products = Product::query()
             ->where('status', 'active')
-            ->with(['variants' => fn ($q) => $q->where('is_active', true)])
+            ->with(['variants' => fn ($q) => $q->where('is_active', true), 'shop:id,name,slug,logo'])
             ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
-            ->when($request->search, fn ($q) => $q->whereRaw("LOWER(name_i18n->>'en') LIKE LOWER(?)", ['%'.$request->search.'%']))
-            ->paginate(20);
+            ->when($request->category, function ($q) use ($request) {
+                $q->whereHas('category', fn ($cq) => $cq->where('slug', $request->category));
+            })
+            ->when($request->q ?? $request->search, fn ($q, $search) => $q->whereRaw("LOWER(name_i18n->>'en') LIKE LOWER(?)", ['%'.$search.'%']))
+            ->when($request->sort, function ($q, $sort) {
+                match ($sort) {
+                    'price_asc' => $q->orderByRaw('(SELECT MIN(price_cents) FROM product_variants WHERE product_variants.product_id = products.id AND is_active = true) ASC'),
+                    'price_desc' => $q->orderByRaw('(SELECT MIN(price_cents) FROM product_variants WHERE product_variants.product_id = products.id AND is_active = true) DESC'),
+                    'featured' => $q->orderByDesc('is_featured')->orderByDesc('created_at'),
+                    default => $q->orderByDesc('created_at'),
+                };
+            }, fn ($q) => $q->orderByDesc('created_at'))
+            ->paginate($request->integer('per_page', 20));
 
         return response()->json($products);
     }

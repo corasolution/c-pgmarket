@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Vendor\Pages;
 
 use App\Models\Shop;
+use App\Services\Delivery\ApolloDeliveryProvider;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -32,15 +34,18 @@ final class ShopSettings extends Page
         $shop = $this->getShop();
 
         $this->form->fill([
-            'name'           => $shop?->name ?? '',
-            'phone'          => $shop?->phone ?? '',
-            'email'          => $shop?->email ?? '',
-            'description_en' => $shop?->description_i18n['en'] ?? '',
-            'description_km' => $shop?->description_i18n['km'] ?? '',
-            'facebook_page'  => $shop?->facebook_page ?? '',
-            'telegram'       => $shop?->telegram ?? '',
-            'logo'           => null,
-            'banner'         => null,
+            'name'             => $shop?->name ?? '',
+            'phone'            => $shop?->phone ?? '',
+            'email'            => $shop?->email ?? '',
+            'description_en'   => $shop?->description_i18n['en'] ?? '',
+            'description_km'   => $shop?->description_i18n['km'] ?? '',
+            'facebook_page'    => $shop?->facebook_page ?? '',
+            'telegram'         => $shop?->telegram ?? '',
+            'telegram_chat_id' => $shop?->telegram_chat_id ?? '',
+            'logo'                 => null,
+            'banner'               => null,
+            'apollo_province_id'   => $shop?->apollo_province_id,
+            'apollo_district_id'   => $shop?->apollo_district_id,
         ]);
     }
 
@@ -94,6 +99,65 @@ final class ShopSettings extends Page
                             ->prefixIcon(Heroicon::OutlinedChatBubbleLeftRight),
                     ]),
 
+                Section::make('Telegram Notifications')
+                    ->description('Receive instant order notifications on Telegram. To find your Chat ID, message @userinfobot on Telegram — it will reply with your ID.')
+                    ->icon(Heroicon::OutlinedBellAlert)
+                    ->schema([
+                        TextInput::make('telegram_chat_id')
+                            ->label('Telegram Chat ID')
+                            ->placeholder('e.g. 123456789')
+                            ->helperText('Your numeric Telegram Chat ID. Message @userinfobot on Telegram to get it.'),
+                    ]),
+
+                Section::make('Apollo Delivery — Sender Location')
+                    ->description('Set your shop\'s sender province and district so Apollo eDelivery can calculate shipping fees and create delivery bookings after each order is paid.')
+                    ->icon(Heroicon::OutlinedTruck)
+                    ->columns(2)
+                    ->schema([
+                        Select::make('apollo_province_id')
+                            ->label('Sender Province')
+                            ->options(function (): array {
+                                try {
+                                    $apollo     = app(ApolloDeliveryProvider::class);
+                                    $provinces  = $apollo->getProvinces();
+
+                                    return collect($provinces)
+                                        ->pluck('name', 'id')
+                                        ->toArray();
+                                } catch (\Throwable) {
+                                    return [];
+                                }
+                            })
+                            ->searchable()
+                            ->placeholder('Select province')
+                            ->helperText('The province your shop ships orders from.')
+                            ->reactive(),
+
+                        Select::make('apollo_district_id')
+                            ->label('Sender District')
+                            ->options(function (callable $get): array {
+                                $provinceId = $get('apollo_province_id');
+
+                                if (! $provinceId) {
+                                    return [];
+                                }
+
+                                try {
+                                    $apollo    = app(ApolloDeliveryProvider::class);
+                                    $districts = $apollo->getDistricts((int) $provinceId);
+
+                                    return collect($districts)
+                                        ->pluck('name', 'id')
+                                        ->toArray();
+                                } catch (\Throwable) {
+                                    return [];
+                                }
+                            })
+                            ->searchable()
+                            ->placeholder('Select district (optional)')
+                            ->helperText('Optional but improves fee accuracy.'),
+                    ]),
+
                 Section::make('Branding')
                     ->description('Upload a new file to replace the current logo or banner. Leave empty to keep existing.')
                     ->icon(Heroicon::OutlinedPhoto)
@@ -136,6 +200,9 @@ final class ShopSettings extends Page
             'email'            => $data['email'] ?: null,
             'facebook_page'    => $data['facebook_page'] ?: null,
             'telegram'         => $data['telegram'] ?: null,
+            'telegram_chat_id'   => $data['telegram_chat_id'] ?: null,
+            'apollo_province_id' => $data['apollo_province_id'] ? (int) $data['apollo_province_id'] : null,
+            'apollo_district_id' => $data['apollo_district_id'] ? (int) $data['apollo_district_id'] : null,
             'description_i18n' => [
                 'en' => $data['description_en'] ?? '',
                 'km' => $data['description_km'] ?? '',

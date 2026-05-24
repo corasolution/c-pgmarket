@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Models\WalletTransaction;
+use App\Notifications\OrderCancelledNotification;
 use App\Support\Enums\UserRole;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -95,6 +96,24 @@ final class CancelOrder
                 'before'         => ['status' => $order->getOriginal('status')],
                 'after'          => ['status' => 'cancelled', 'reason' => $reason],
             ]);
+
+            // Notify buyer
+            $buyer = $order->buyer;
+            if ($buyer?->email) {
+                foreach ($order->subOrders as $subOrder) {
+                    if ($subOrder->status === 'cancelled') {
+                        $buyer->notify(new OrderCancelledNotification($subOrder, 'buyer', $reason));
+                    }
+                }
+            }
+
+            // Notify each affected vendor
+            foreach ($order->subOrders as $subOrder) {
+                if ($subOrder->status === 'cancelled') {
+                    $owner = $subOrder->shop?->owner;
+                    $owner?->notify(new OrderCancelledNotification($subOrder, 'vendor', $reason));
+                }
+            }
         });
     }
 

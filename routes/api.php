@@ -25,6 +25,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['throttle:60,1'])->group(funct
     Route::middleware(['throttle:5,1'])->group(function (): void {
         Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
         Route::post('/auth/register', [AuthController::class, 'register'])->name('auth.register');
+        Route::post('/auth/google', [AuthController::class, 'googleLogin'])->name('auth.google.mobile');
     });
 
     // ── Public endpoints (no auth required) ──────────────────────────────
@@ -36,18 +37,19 @@ Route::prefix('v1')->name('api.v1.')->middleware(['throttle:60,1'])->group(funct
     Route::get('/shops', [ShopApiController::class, 'index'])->name('shops.index');
     Route::get('/shops/{slug}', [ShopApiController::class, 'show'])->name('shops.show');
 
+    // Products (public — browsable without login)
+    Route::apiResource('products', ProductController::class)->only(['index', 'show']);
+
     // ── Authenticated endpoints ──────────────────────────────────────────
     Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::delete('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
         Route::get('/auth/me', [AuthController::class, 'me'])->name('auth.me');
         Route::put('/auth/profile', [AuthController::class, 'updateProfile'])->name('auth.profile.update');
 
-        // Products
-        Route::apiResource('products', ProductController::class)->only(['index', 'show']);
-
         // Orders — rate-limited to 10/min per user
         Route::middleware(['throttle:10,1'])->group(function (): void {
             Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
+            Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         });
 
         // Cart

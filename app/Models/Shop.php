@@ -18,7 +18,8 @@ final class Shop extends Model
     protected $fillable = [
         'owner_id', 'name', 'slug', 'description_i18n', 'logo', 'banner',
         'status', 'commission_percent', 'currency', 'phone', 'email', 'address',
-        'facebook_page', 'telegram',
+        'facebook_page', 'telegram', 'telegram_chat_id',
+        'apollo_province_id', 'apollo_district_id',
     ];
 
     protected function casts(): array
@@ -28,7 +29,9 @@ final class Shop extends Model
             'address' => 'array',
             'approved_at' => 'datetime',
             'suspended_at' => 'datetime',
-            'commission_percent' => 'integer',
+            'commission_percent'   => 'integer',
+            'apollo_province_id'   => 'integer',
+            'apollo_district_id'   => 'integer',
         ];
     }
 

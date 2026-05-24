@@ -170,6 +170,14 @@ final class ProductForm
                                         ->required(fn (callable $get): bool => (bool) $get('../../stock_track'))
                                         ->visible(fn (callable $get): bool => (bool) $get('../../stock_track')),
 
+                                    TextInput::make('low_stock_threshold')
+                                        ->label('Low Stock Alert')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->default(5)
+                                        ->helperText('Get notified when stock drops below this.')
+                                        ->visible(fn (callable $get): bool => (bool) $get('../../stock_track')),
+
                                     TextInput::make('price_cents')
                                         ->label('Price (cents)')
                                         ->helperText('e.g. $10.00 → 1000')

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ShopVerification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -46,11 +47,16 @@ final class PrivateFileController extends Controller
     {
         $path = "invoices/order-{$order->id}.pdf";
 
+        // Generate PDF on-demand if not cached
         if (! Storage::disk('local')->exists($path)) {
-            abort(404, 'Invoice not yet generated.');
+            $order->load('buyer', 'subOrders.shop', 'subOrders.items');
+
+            $pdf = Pdf::loadView('pdf.invoice', ['order' => $order]);
+
+            Storage::disk('local')->put($path, $pdf->output());
         }
 
-        return Storage::disk('local')->download($path, "invoice-{$order->id}.pdf");
+        return Storage::disk('local')->download($path, "invoice-{$order->reference}.pdf");
     }
 
     /**

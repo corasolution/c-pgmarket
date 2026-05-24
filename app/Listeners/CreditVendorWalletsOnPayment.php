@@ -6,6 +6,7 @@ namespace App\Listeners;
 
 use App\Actions\Payment\CreditWallet;
 use App\Events\Payment\PaymentReceived;
+use App\Notifications\PaymentReceivedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 final class CreditVendorWalletsOnPayment implements ShouldQueue
@@ -27,6 +28,12 @@ final class CreditVendorWalletsOnPayment implements ShouldQueue
         foreach ($order->subOrders as $subOrder) {
             $subOrder->update(['status' => 'paid']);
             ($this->creditWallet)($subOrder, reason: 'order_payment');
+        }
+
+        // Notify buyer that payment was received
+        $buyer = $order->buyer;
+        if ($buyer?->email) {
+            $buyer->notify(new PaymentReceivedNotification($order));
         }
     }
 }

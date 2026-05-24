@@ -6,10 +6,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Facades\Socialite;
 
 final class AuthController extends Controller
 {
@@ -53,6 +55,48 @@ final class AuthController extends Controller
         $token = $user->createToken($validated['device_name'])->plainTextToken;
 
         return response()->json(['token' => $token], 201);
+    }
+
+    public function googleLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id_token' => ['required', 'string'],
+            'device_name' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->userFromToken($validated['id_token']);
+        } catch (\Throwable) {
+            return response()->json(['message' => 'Invalid Google token.'], 401);
+        }
+
+        $user = User::where('google_id', $googleUser->getId())->first()
+            ?? User::where('email', $googleUser->getEmail())->first();
+
+        if ($user !== null) {
+            if ($user->google_id === null) {
+                $user->update([
+                    'google_id' => $googleUser->getId(),
+                    'avatar' => $googleUser->getAvatar(),
+                    'email_verified_at' => $user->email_verified_at ?? now(),
+                ]);
+            }
+        } else {
+            $user = User::create([
+                'name' => $googleUser->getName() ?? 'Google User',
+                'email' => $googleUser->getEmail(),
+                'google_id' => $googleUser->getId(),
+                'avatar' => $googleUser->getAvatar(),
+                'role' => 'buyer',
+                'email_verified_at' => now(),
+            ]);
+
+            event(new Registered($user));
+        }
+
+        $token = $user->createToken($validated['device_name'])->plainTextToken;
+
+        return response()->json(['token' => $token]);
     }
 
     public function logout(Request $request): JsonResponse

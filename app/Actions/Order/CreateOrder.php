@@ -6,6 +6,7 @@ namespace App\Actions\Order;
 
 use App\Events\Order\OrderCreated;
 use App\Models\Cart;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\SubOrder;
@@ -17,9 +18,9 @@ final class CreateOrder
     /**
      * @param  array<string, mixed>  $shippingAddress
      */
-    public function __invoke(Cart $cart, User $buyer, array $shippingAddress, ?string $note = null): Order
+    public function __invoke(Cart $cart, User $buyer, array $shippingAddress, ?string $note = null, ?string $couponCode = null): Order
     {
-        return DB::transaction(function () use ($cart, $buyer, $shippingAddress, $note): Order {
+        return DB::transaction(function () use ($cart, $buyer, $shippingAddress, $note, $couponCode): Order {
             $items = $cart->items()->with('variant.product')->get();
 
             // Validate stock for all items (with pessimistic lock)
@@ -47,7 +48,27 @@ final class CreateOrder
                 }
             }
 
-            $totalCents = $items->sum(fn ($item) => $item->unit_price_cents * $item->quantity);
+            $subtotalCents = $items->sum(fn ($item) => $item->unit_price_cents * $item->quantity);
+
+            // Apply coupon if provided
+            $coupon = null;
+            $discountCents = 0;
+
+            if ($couponCode !== null && $couponCode !== '') {
+                $coupon = Coupon::where('code', strtoupper(trim($couponCode)))->first();
+
+                if ($coupon === null) {
+                    throw new \DomainException('Invalid coupon code.');
+                }
+
+                if (! $coupon->isValid($subtotalCents, $buyer->id)) {
+                    throw new \DomainException('This coupon is not valid for your order.');
+                }
+
+                $discountCents = $coupon->calculateDiscount($subtotalCents);
+            }
+
+            $totalCents = max(0, $subtotalCents - $discountCents);
 
             $order = Order::create([
                 'reference' => 'ORD-'.now()->format('Y').'-'.strtoupper(uniqid()),
@@ -57,7 +78,21 @@ final class CreateOrder
                 'total_currency' => 'USD',
                 'shipping_address' => $shippingAddress,
                 'note' => $note,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
+                'discount_cents' => $discountCents,
             ]);
+
+            // Record coupon usage
+            if ($coupon !== null) {
+                DB::table('coupon_user')->insert([
+                    'coupon_id' => $coupon->id,
+                    'user_id'   => $buyer->id,
+                    'order_id'  => $order->id,
+                    'used_at'   => now(),
+                ]);
+                $coupon->increment('times_used');
+            }
 
             // Group items by shop and create one SubOrder per shop
             $itemsByShop = $items->groupBy(fn ($item) => $item->variant->product->shop_id);
