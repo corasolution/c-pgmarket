@@ -78,8 +78,10 @@ export default function ChatbotWidget() {
             } else {
                 setMessages(prev => [...prev, { role: 'assistant', content: data.reply ?? '' }]);
             }
-        } catch {
-            setError('Network error — please try again.');
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { error?: string } } };
+            const msg = axiosErr?.response?.data?.error;
+            setError(msg ?? 'Network error — please try again.');
         } finally {
             setIsLoading(false);
         }
