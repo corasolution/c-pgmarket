@@ -22,7 +22,7 @@ final class CheckoutRequest extends FormRequest
             'shipping_address.phone'        => ['required', 'string', 'max:30'],
             'shipping_address.address_line' => ['required', 'string', 'max:500'],
             'shipping_address.city'         => ['required', 'string', 'max:100'],
-            'shipping_address.province'     => ['sometimes', 'string', 'max:100'],
+            'shipping_address.province'     => ['sometimes', 'nullable', 'string', 'max:100'],
             'note'                          => ['nullable', 'string', 'max:1000'],
         ];
     }

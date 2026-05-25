@@ -447,14 +447,10 @@ export default function StorefrontLayout({ children }: Props) {
                                 </a>
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 sm:shrink-0">
+                        <div className="flex items-center gap-3 sm:shrink-0">
                             <span className="font-medium text-white/70">{t('footer.we_accept')}</span>
-                            <span className="rounded px-2.5 py-1 text-[11px] font-extrabold tracking-wider bg-gray-900 text-white border border-gray-700">
-                                ABA<span className="text-blue-400">&apos;</span>
-                            </span>
-                            <span className="rounded px-2.5 py-1 text-[11px] font-extrabold tracking-wider bg-red-600 text-white">
-                                KHQR
-                            </span>
+                            <img src="/images/ABA_PAY.svg" alt="ABA Pay" className="h-7 w-auto" />
+                            <img src="/images/KHQR.svg" alt="KHQR" className="h-7 w-auto" />
                         </div>
                     </div>
                 </div>

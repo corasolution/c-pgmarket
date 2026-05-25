@@ -15,32 +15,32 @@ final class ApolloDeliveryProvider implements DeliveryProvider
 {
     private function baseUrl(): string
     {
-        return rtrim((string) setting('APOLLO_BASE_URL', 'https://apolo-api.codingate.com'), '/');
+        return rtrim((string) env('APOLLO_BASE_URL', 'https://apolo-api.codingate.com'), '/');
     }
 
     private function deviceOs(): string
     {
-        return (string) setting('APOLLO_DEVICE_OS', 'Web');
+        return (string) env('APOLLO_DEVICE_OS', 'Web');
     }
 
     private function deviceId(): string
     {
-        return (string) setting('APOLLO_DEVICE_ID', 'pgmarket-platform-001');
+        return (string) env('APOLLO_DEVICE_ID', 'pgmarket-platform-001');
     }
 
     private function email(): string
     {
-        return (string) setting('APOLLO_EMAIL', '');
+        return (string) env('APOLLO_EMAIL', '');
     }
 
     private function password(): string
     {
-        return (string) setting('APOLLO_PASSWORD', '');
+        return (string) env('APOLLO_PASSWORD', '');
     }
 
     private function defaultServiceType(): string
     {
-        return (string) setting('APOLLO_DEFAULT_SERVICE_TYPE', 'next_day');
+        return (string) env('APOLLO_DEFAULT_SERVICE_TYPE', 'next_day');
     }
 
     /**

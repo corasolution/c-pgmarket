@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources\Chatbot;
 
 use App\Filament\Admin\Resources\Chatbot\Pages\EditChatbotSetting;
+use App\Filament\Admin\Resources\Chatbot\Pages\ListChatbotSettings;
 use App\Models\ChatbotSetting;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -33,9 +34,23 @@ final class ChatbotSettingResource extends Resource
 
     public static function getNavigationUrl(): string
     {
-        $id = ChatbotSetting::current()->getKey();
+        $setting = ChatbotSetting::first();
 
-        return static::getUrl('edit', ['record' => $id]);
+        if ($setting === null) {
+            $setting = ChatbotSetting::create([
+                'is_enabled'   => false,
+                'provider'     => 'claude',
+                'claude_model' => 'claude-haiku-4-5-20251001',
+                'max_tokens'   => 1024,
+            ]);
+        }
+
+        return static::getUrl('edit', ['record' => $setting->getKey()]);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
     }
 
     public static function form(Schema $schema): Schema
@@ -128,7 +143,8 @@ final class ChatbotSettingResource extends Resource
     public static function getPages(): array
     {
         return [
-            'edit' => EditChatbotSetting::route('/{record}/edit'),
+            'index' => ListChatbotSettings::route('/'),
+            'edit'  => EditChatbotSetting::route('/{record}/edit'),
         ];
     }
 }
