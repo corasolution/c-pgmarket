@@ -34,7 +34,7 @@ final class ChatbotSetting extends Model
         return static::firstOrCreate([], [
             'is_enabled'   => true,
             'provider'     => 'claude',
-            'claude_model' => 'claude-3-5-haiku-20241022',
+            'claude_model' => 'claude-haiku-4-5-20251001',
             'gemini_model' => 'gemini-2.0-flash',
             'max_tokens'   => 1024,
         ]);

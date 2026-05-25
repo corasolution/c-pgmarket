@@ -78,13 +78,11 @@ final class ChatbotSettingResource extends Resource
             Select::make('claude_model')
                 ->label('Claude Model')
                 ->options([
-                    'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku — Fast & cheap (recommended)',
-                    'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet — Balanced',
-                    'claude-3-7-sonnet-20250219' => 'Claude 3.7 Sonnet — Most capable',
-                    'claude-3-haiku-20240307'    => 'Claude 3 Haiku — Legacy fast',
-                    'claude-3-opus-20240229'     => 'Claude 3 Opus — Legacy powerful',
+                    'claude-haiku-4-5-20251001'  => 'Claude Haiku 4.5 — Fast & cheap (recommended)',
+                    'claude-sonnet-4-5-20251001' => 'Claude Sonnet 4.5 — Balanced',
+                    'claude-sonnet-4-6'          => 'Claude Sonnet 4.6 — Most capable',
                 ])
-                ->default('claude-3-5-haiku-20241022')
+                ->default('claude-haiku-4-5-20251001')
                 ->visible(fn (callable $get): bool => ($get('provider') ?? 'claude') === 'claude'),
 
             TextInput::make('claude_api_key')
